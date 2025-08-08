@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>焦慮戳戳（Web 版）</title>
   <meta name="description" content="離線本機儲存、超大紅色按鈕、今日/本週/總計統計，含 CSV 匯出與蓄力音效。單檔可直接開啟。" />
   <style>
@@ -13,9 +13,28 @@
       --accent: #e53935; /* red */
     }
     *{box-sizing:border-box}
-    html,body{height:100%}
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans TC,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";background:radial-gradient(1200px 600px at 80% 20%,#17181c 0%,#0d0e12 60%,#090a0d 100%);color:var(--fg);-webkit-tap-highlight-color:transparent}
-    .container{max-width:720px;margin:0 auto;padding:20px 16px 32px}
+    html,body{height:100%;margin:0;padding:0}
+    body{
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans TC,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";
+      background:radial-gradient(1200px 600px at 80% 20%,#17181c 0%,#0d0e12 60%,#090a0d 100%);
+      color:var(--fg);
+      -webkit-tap-highlight-color:transparent;
+      padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      min-height:100vh;
+      min-height:100dvh;
+      display:flex;
+      flex-direction:column
+    }
+    .container{
+      max-width:720px;
+      margin:0 auto;
+      padding:max(40px, env(safe-area-inset-top) + 20px) 16px max(40px, env(safe-area-inset-bottom) + 20px);
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      min-height:0
+    }
     header{display:flex;align-items:center;justify-content:center;gap:12px;flex-direction:column;text-align:center}
     .title{font-size:clamp(20px,3.2vw,28px);font-weight:800;letter-spacing:.2px}
     .subtitle{font-size:clamp(12px,2vw,16px);color:var(--muted);font-weight:400;margin-top:4px}
@@ -23,8 +42,30 @@
     .chip{background:#0f1014;border:1px solid #22242b;border-radius:999px;padding:8px 12px;font-size:13px;color:var(--muted)}
     .card{background:var(--card);border:1px solid #22242b;border-radius:16px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.35);backdrop-filter:saturate(1.2) blur(6px)}
     .center{display:flex;align-items:center;justify-content:center;flex-direction:column}
-    .big-btn{width:240px;height:240px;border-radius:999px;border:none;cursor:pointer;position:relative;outline:none;background:radial-gradient(120px 120px at 60% 35%,#ff5b5b,var(--accent));box-shadow:0 30px 60px rgba(229,57,53,.45),inset 0 -12px 24px rgba(0,0,0,.35);color:#fff;font-size:48px;font-weight:900;letter-spacing:2px;transition:transform .12s ease,box-shadow .12s ease;user-select:none;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;touch-action:manipulation}
-    .big-btn:active{transform:scale(.96);box-shadow:0 18px 36px rgba(229,57,53,.35),inset 0 -8px 18px rgba(0,0,0,.45)}
+    .big-btn{
+      width:clamp(200px, 50vw, 280px);
+      height:clamp(200px, 50vw, 280px);
+      border-radius:999px;
+      border:none;
+      cursor:pointer;
+      position:relative;
+      outline:none;
+      background:radial-gradient(120px 120px at 60% 35%,#ff5b5b,var(--accent));
+      box-shadow:0 30px 60px rgba(229,57,53,.45),inset 0 -12px 24px rgba(0,0,0,.35);
+      color:#fff;
+      font-size:clamp(36px, 8vw, 48px);
+      font-weight:900;
+      letter-spacing:2px;
+      transition:transform .12s ease,box-shadow .12s ease;
+      user-select:none;
+      -webkit-user-select:none;
+      -moz-user-select:none;
+      -ms-user-select:none;
+      touch-action:manipulation;
+      -webkit-touch-callout:none;
+      -webkit-appearance:none
+    }
+    .big-btn:active{transform:scale(.94);box-shadow:0 18px 36px rgba(229,57,53,.35),inset 0 -8px 18px rgba(0,0,0,.45)}
     .big-btn::before{content:'';position:absolute;top:-20px;left:-20px;right:-20px;bottom:-20px;border-radius:999px;background:conic-gradient(from 0deg,#ff6b6b,#ff4757,#ff3742,#ff6b6b);opacity:0;animation:spin 2s linear infinite;transition:opacity .3s ease;z-index:-1}
     .big-btn.charging::before{opacity:0.8}
     .big-btn.exploding{animation:explode .6s ease-out}
@@ -44,8 +85,10 @@
     .pill{display:inline-flex;border:1px solid #2b2e39;padding:4px;border-radius:999px;gap:4px}
     .pill button{border:none;background:transparent;color:var(--muted);padding:8px 12px;border-radius:999px;cursor:pointer;font-weight:700}
     .pill button[aria-pressed="true"]{background:#0f1014;color:var(--fg)}
+    main{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0}
+    .button-section{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:20px 0;transform:translateY(10vh)}
+    .controls-section{flex-shrink:0;padding:20px 0}
     .section{margin-top:24px}
-    @media (max-width:420px){.big-btn{width:200px;height:200px;font-size:40px}}
   </style>
 </head>
 <body>
@@ -56,16 +99,18 @@
     </header>
 
     <main>
-      <section class="section center" style="min-height:260px;">
+      <div class="button-section">
         <button class="big-btn" id="tapBtn" aria-label="大按鈕，點按加一；長按蓄力後放開加一並播放重音">戳！</button>
         <div class="big-counter" id="bigCounter">0</div>
-      </section>
+      </div>
 
-      <section class="section card">
-        <div class="row">
-          <button class="btn" id="soundBtn" aria-pressed="true" title="切換音效">音效：開</button>
+      <div class="controls-section">
+        <div class="card">
+          <div class="row">
+            <button class="btn" id="soundBtn" aria-pressed="true" title="切換音效">音效：開</button>
+          </div>
         </div>
-      </section>
+      </div>
     </main>
   </div>
 
