@@ -16,14 +16,26 @@
     html,body{height:100%}
     body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans TC,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";background:radial-gradient(1200px 600px at 80% 20%,#17181c 0%,#0d0e12 60%,#090a0d 100%);color:var(--fg);-webkit-tap-highlight-color:transparent}
     .container{max-width:720px;margin:0 auto;padding:20px 16px 32px}
-    header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    header{display:flex;align-items:center;justify-content:center;gap:12px;flex-direction:column;text-align:center}
     .title{font-size:clamp(20px,3.2vw,28px);font-weight:800;letter-spacing:.2px}
+    .subtitle{font-size:clamp(12px,2vw,16px);color:var(--muted);font-weight:400;margin-top:4px}
     .stats{display:flex;gap:12px;flex-wrap:wrap}
     .chip{background:#0f1014;border:1px solid #22242b;border-radius:999px;padding:8px 12px;font-size:13px;color:var(--muted)}
     .card{background:var(--card);border:1px solid #22242b;border-radius:16px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.35);backdrop-filter:saturate(1.2) blur(6px)}
-    .center{display:flex;align-items:center;justify-content:center}
+    .center{display:flex;align-items:center;justify-content:center;flex-direction:column}
     .big-btn{width:240px;height:240px;border-radius:999px;border:none;cursor:pointer;position:relative;outline:none;background:radial-gradient(120px 120px at 60% 35%,#ff5b5b,var(--accent));box-shadow:0 30px 60px rgba(229,57,53,.45),inset 0 -12px 24px rgba(0,0,0,.35);color:#fff;font-size:48px;font-weight:900;letter-spacing:2px;transition:transform .12s ease,box-shadow .12s ease;user-select:none;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;touch-action:manipulation}
     .big-btn:active{transform:scale(.96);box-shadow:0 18px 36px rgba(229,57,53,.35),inset 0 -8px 18px rgba(0,0,0,.45)}
+    .big-btn::before{content:'';position:absolute;top:-20px;left:-20px;right:-20px;bottom:-20px;border-radius:999px;background:conic-gradient(from 0deg,#ff6b6b,#ff4757,#ff3742,#ff6b6b);opacity:0;animation:spin 2s linear infinite;transition:opacity .3s ease;z-index:-1}
+    .big-btn.charging::before{opacity:0.8}
+    .big-btn.exploding{animation:explode .6s ease-out}
+    @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+    @keyframes explode{0%{transform:scale(1)}20%{transform:scale(1.2)}40%{transform:scale(0.9)}100%{transform:scale(1)}}
+    @keyframes shake{0%,100%{transform:translateX(0)}10%,30%,50%,70%,90%{transform:translateX(-3px)}20%,40%,60%,80%{transform:translateX(3px)}}
+    .screen-shake{animation:shake 0.5s ease-in-out}
+    .particle{position:absolute;width:8px;height:8px;background:#ff6b6b;border-radius:50%;pointer-events:none;z-index:1000}
+    @keyframes particle-explosion{0%{transform:scale(1) translate(0,0);opacity:1}100%{transform:scale(0) translate(var(--dx),var(--dy));opacity:0}}
+    .particle.exploding{animation:particle-explosion 0.8s ease-out forwards}
+    .big-counter{font-size:clamp(60px,12vw,120px);font-weight:900;color:var(--fg);text-align:center;margin-top:24px;letter-spacing:4px;text-shadow:0 4px 20px rgba(233,234,238,.3);transition:all .2s ease}
     .row{display:flex;align-items:center;justify-content:space-between;gap:12px}
     .btn{background:#111217;border:1px solid #262832;color:var(--fg);border-radius:10px;padding:10px 14px;cursor:pointer;font-weight:600}
     .btn:hover{border-color:#2f3240}
@@ -33,9 +45,6 @@
     .pill button{border:none;background:transparent;color:var(--muted);padding:8px 12px;border-radius:999px;cursor:pointer;font-weight:700}
     .pill button[aria-pressed="true"]{background:#0f1014;color:var(--fg)}
     .section{margin-top:24px}
-    #chart{width:100%;height:280px}
-    .hint{color:var(--muted);font-size:12px}
-    .level-badge{font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid #2a2c36;color:#cbd5e1;background:#101218}
     @media (max-width:420px){.big-btn{width:200px;height:200px;font-size:40px}}
   </style>
 </head>
@@ -43,38 +52,18 @@
   <div class="container">
     <header>
       <div class="title">焦慮戳戳樂</div>
-      <div class="stats" aria-live="polite">
-        <span class="chip" id="badge">LV1 平穩</span>
-        <span class="chip" id="today">今天：0 次</span>
-        <span class="chip" id="week">本週：0</span>
-        <span class="chip" id="total">總計：0</span>
-      </div>
+      <div class="subtitle">真實的人類，真實的焦慮</div>
     </header>
 
     <main>
       <section class="section center" style="min-height:260px;">
         <button class="big-btn" id="tapBtn" aria-label="大按鈕，點按加一；長按蓄力後放開加一並播放重音">戳！</button>
+        <div class="big-counter" id="bigCounter">0</div>
       </section>
 
       <section class="section card">
-        <div class="row" style="margin-bottom:12px;">
-          <div class="pill" role="tablist" aria-label="統計範圍">
-            <button role="tab" id="range-7" data-days="7" aria-pressed="false">7 天</button>
-            <button role="tab" id="range-14" data-days="14" aria-pressed="true">14 天</button>
-            <button role="tab" id="range-30" data-days="30" aria-pressed="false">30 天</button>
-          </div>
-          <span class="level-badge" id="levelBadge">LV1 平穩</span>
-        </div>
-        <div id="chart" aria-label="最近幾天的每日次數長條圖"></div>
-        <div class="row" style="margin-top:12px;">
-          <div class="hint">資料只存在你的瀏覽器，不會上傳（清除瀏覽器資料或換裝置會遺失）。</div>
-          <div style="display:flex;gap:8px;align-items:center;">
-            <button class="btn btn-tonal" id="exportBtn">匯出 CSV</button>
-            <button class="btn" id="soundBtn" aria-pressed="true" title="切換音效">音效：開</button>
-            <label class="hint" for="volRange">音量</label>
-            <input id="volRange" type="range" min="0" max="100" value="70" style="width:120px;" />
-            <button class="btn btn-danger" id="resetBtn">重設</button>
-          </div>
+        <div class="row">
+          <button class="btn" id="soundBtn" aria-pressed="true" title="切換音效">音效：開</button>
         </div>
       </section>
     </main>
@@ -83,34 +72,28 @@
   <script>
   document.addEventListener('DOMContentLoaded', () => {
     // ====== Utilities ======
-    const fmt = new Intl.DateTimeFormat('zh-Hant', { month: 'numeric', day: 'numeric' });
-    const todayStart = (d=new Date()) => { const x = new Date(d); x.setHours(0,0,0,0); return x; };
-    const startOfWeek = (d=new Date()) => { const x = todayStart(d); const day = x.getDay(); const diff = (day === 0 ? -6 : 1) - day; x.setDate(x.getDate() + diff); return x; };
 
     // Haptics (best-effort)
     function haptic(ms=15){ try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} }
 
     // ====== Sound (Web Audio; no external files) ======
     const SOUND_ENABLED_KEY = 'anxiety_taps_sound_enabled';
-    const SOUND_VOL_KEY = 'anxiety_taps_sound_vol';
     let audioCtx = null; // lazy init
     function isSoundEnabled(){ const v = localStorage.getItem(SOUND_ENABLED_KEY); return v === null ? true : v === '1'; }
     function setSoundEnabled(on){ localStorage.setItem(SOUND_ENABLED_KEY, on ? '1':'0'); }
-    function getVolume(){ const v = Number(localStorage.getItem(SOUND_VOL_KEY)); return Number.isFinite(v) ? Math.min(100, Math.max(0,v)) : 70; }
-    function setVolume(v){ localStorage.setItem(SOUND_VOL_KEY, String(Math.min(100, Math.max(0,v)))); }
     function ensureAudio(){ if (!audioCtx){ const Ctx = window.AudioContext || window.webkitAudioContext; if (Ctx) audioCtx = new Ctx(); }
       if (audioCtx && audioCtx.state === 'suspended'){ audioCtx.resume().catch(()=>{}); } return !!audioCtx; }
 
     // 短按音：輕快往上滑的 sine
     function playPing(){ if (!isSoundEnabled()) return; if (!ensureAudio()) return; const now = audioCtx.currentTime; const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
       osc.type='sine'; osc.frequency.setValueAtTime(440, now); osc.frequency.exponentialRampToValueAtTime(880, now + 0.06);
-      const vol = getVolume()/100; const maxGain = 0.22 * vol; gain.gain.setValueAtTime(0, now); gain.gain.linearRampToValueAtTime(maxGain, now+0.008); gain.gain.exponentialRampToValueAtTime(0.0008, now+0.12);
+      const maxGain = 0.22; gain.gain.setValueAtTime(0, now); gain.gain.linearRampToValueAtTime(maxGain, now+0.008); gain.gain.exponentialRampToValueAtTime(0.0008, now+0.12);
       osc.connect(gain).connect(audioCtx.destination); osc.start(now); osc.stop(now+0.16); }
 
     // 長按後放開的重音：兩個振盪器 + 衰減更慢；力度依蓄力 charge(0..1)
-    function playBoom(charge){ if (!isSoundEnabled()) return; if (!ensureAudio()) return; const now = audioCtx.currentTime; const vol = getVolume()/100;
+    function playBoom(charge){ if (!isSoundEnabled()) return; if (!ensureAudio()) return; const now = audioCtx.currentTime;
       const baseGain = 0.28 + 0.5 * charge; // 0.28..0.78
-      const maxGain = Math.min(0.6, baseGain) * vol; // 安全上限
+      const maxGain = Math.min(0.6, baseGain); // 安全上限
 
       // 低頻下滑的 sine
       const osc1 = audioCtx.createOscillator(); const g1 = audioCtx.createGain();
@@ -139,37 +122,15 @@
     function resetAll(){ writeEvents([]); }
 
     // ====== Stats ======
-    function counts(){ const arr = readEvents(); const calToday = todayStart(); const weekStart = startOfWeek(); let today=0, week=0; for (const t of arr){ if (t >= calToday.getTime()) today++; if (t >= weekStart.getTime()) week++; } return { today, week, total: arr.length }; }
-    function lastNDaysSeries(days){ const start = todayStart(); start.setDate(start.getDate() - (days - 1)); const buckets = new Map(); for (let i=0;i<days;i++){ const d = new Date(start); d.setDate(start.getDate()+i); buckets.set(todayStart(d).getTime(), 0); }
-      for (const t of readEvents()){ if (t >= start.getTime()){ const key = todayStart(new Date(t)).getTime(); buckets.set(key, (buckets.get(key)||0) + 1); } }
-      return Array.from(buckets.entries()).map(([k,v]) => ({ x: new Date(Number(k)), y: v })); }
-    function levelBadge(todayCount){ if (todayCount < 20) return 'LV1 平穩'; if (todayCount < 60) return 'LV2 專注'; if (todayCount < 120) return 'LV3 充能'; return 'LV4 爆衝'; }
+    function totalCount(){ return readEvents().length; }
 
-    // ====== Chart (SVG) ======
-    function renderBarChart(el, data){ const W = el.clientWidth || 640; const H = 260; const P = { l: 28, r: 16, t: 16, b: 30 }; const innerW = W - P.l - P.r; const innerH = H - P.t - P.b; const maxY = Math.max(1, ...data.map(d => d.y)); const stepX = innerW / data.length; const barW = Math.max(6, Math.min(22, stepX * 0.6)); const svgNS = 'http://www.w3.org/2000/svg'; const svg = document.createElementNS(svgNS,'svg'); svg.setAttribute('viewBox',`0 0 ${W} ${H}`); svg.setAttribute('width','100%'); svg.setAttribute('height',H);
-      const grid = document.createElementNS(svgNS,'g'); for (let i=0;i<=4;i++){ const y = P.t + innerH * (i/4); const line = document.createElementNS(svgNS,'line'); line.setAttribute('x1',P.l); line.setAttribute('x2',W-P.r); line.setAttribute('y1',y); line.setAttribute('y2',y); line.setAttribute('stroke','#2a2d36'); line.setAttribute('stroke-width','1'); line.setAttribute('opacity', i===0?1:.6); grid.appendChild(line);} svg.appendChild(grid);
-      const bars = document.createElementNS(svgNS,'g'); data.forEach((d,i)=>{ const x = P.l + i * stepX + (stepX - barW)/2; const h = Math.round(innerH * (d.y / maxY)); const y = P.t + innerH - h; const rect = document.createElementNS(svgNS,'rect'); rect.setAttribute('x',x); rect.setAttribute('y',y); rect.setAttribute('width',barW); rect.setAttribute('height',h); rect.setAttribute('rx',4); rect.setAttribute('fill','url(#grad)'); rect.setAttribute('opacity', d.y>0?1:0.6); bars.appendChild(rect);
-        if (d.y>0){ const label = document.createElementNS(svgNS,'text'); label.setAttribute('x', x + barW/2); label.setAttribute('y', y - 6); label.setAttribute('text-anchor','middle'); label.setAttribute('font-size','11'); label.setAttribute('fill','#aab2c0'); label.textContent = d.y; bars.appendChild(label);} const tick = document.createElementNS(svgNS,'text'); tick.setAttribute('x', P.l + i*stepX + stepX/2); tick.setAttribute('y', H - 8); tick.setAttribute('text-anchor','middle'); tick.setAttribute('font-size','11'); tick.setAttribute('fill','#8a909c'); tick.textContent = fmt.format(d.x); bars.appendChild(tick); }); svg.appendChild(bars);
-      const defs = document.createElementNS(svgNS,'defs'); const grad = document.createElementNS(svgNS,'linearGradient'); grad.setAttribute('id','grad'); grad.setAttribute('x1','0'); grad.setAttribute('x2','0'); grad.setAttribute('y1','0'); grad.setAttribute('y2','1'); const s1 = document.createElementNS(svgNS,'stop'); s1.setAttribute('offset','0%'); s1.setAttribute('stop-color','#ff6b6b'); const s2 = document.createElementNS(svgNS,'stop'); s2.setAttribute('offset','100%'); s2.setAttribute('stop-color','#e53935'); grad.appendChild(s1); grad.appendChild(s2); defs.appendChild(grad); svg.appendChild(defs);
-      el.replaceChildren(svg); }
 
     // ====== UI Wiring ======
     const tapBtn = document.getElementById('tapBtn');
-    const todayEl = document.getElementById('today');
-    const weekEl = document.getElementById('week');
-    const totalEl = document.getElementById('total');
-    const badgeEl = document.getElementById('badge');
-    const levelEl = document.getElementById('levelBadge');
-    const chartEl = document.getElementById('chart');
-    const exportBtn = document.getElementById('exportBtn');
-    const resetBtn = document.getElementById('resetBtn');
+    const bigCounter = document.getElementById('bigCounter');
     const soundBtn = document.getElementById('soundBtn');
-    const volRange = document.getElementById('volRange');
-    const rangeBtns = Array.from(document.querySelectorAll('.pill button'));
 
-    let days = 14;
-
-    function refresh(){ const { today, week, total } = counts(); todayEl.textContent = `今天：${today} 次`; weekEl.textContent = `本週：${week}`; totalEl.textContent = `總計：${total}`; const badge = levelBadge(today); badgeEl.textContent = badge; levelEl.textContent = badge; renderBarChart(chartEl, lastNDaysSeries(days)); }
+    function refresh(){ const total = totalCount(); bigCounter.textContent = total; }
 
     // ---- 長按蓄力 & 釋放重音 ----
     const LONG_MS = 400;           // 超過此值視為長按
@@ -178,24 +139,95 @@
 
     function computeCharge(ms){ return Math.max(0, Math.min(1, ms / MAX_CHARGE_MS)); }
 
+    // 動畫效果函數
+    function createParticleExplosion(x, y, intensity = 1) {
+      const particleCount = Math.floor(12 * intensity);
+      const container = document.body;
+      
+      for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        
+        // 隨機方向和距離
+        const angle = (Math.PI * 2 * i) / particleCount + (Math.random() - 0.5) * 0.5;
+        const distance = 100 + Math.random() * 100 * intensity;
+        const dx = Math.cos(angle) * distance;
+        const dy = Math.sin(angle) * distance;
+        
+        particle.style.left = x + 'px';
+        particle.style.top = y + 'px';
+        particle.style.setProperty('--dx', dx + 'px');
+        particle.style.setProperty('--dy', dy + 'px');
+        
+        container.appendChild(particle);
+        
+        // 觸發動畫
+        requestAnimationFrame(() => {
+          particle.classList.add('exploding');
+        });
+        
+        // 清理
+        setTimeout(() => {
+          if (particle.parentNode) {
+            particle.parentNode.removeChild(particle);
+          }
+        }, 800);
+      }
+    }
+
+    function screenShake(intensity = 1) {
+      document.body.classList.add('screen-shake');
+      setTimeout(() => {
+        document.body.classList.remove('screen-shake');
+      }, 500 * intensity);
+    }
+
     // 使用 Pointer Events 支援滑鼠與觸控
+    let chargeTimer = null;
+    
     tapBtn.addEventListener('pointerdown', (e) => {
       e.preventDefault();
       pressStart = performance.now();
       try { tapBtn.setPointerCapture(e.pointerId); } catch {}
       haptic(10);
+      
+      // 延遲啟動充電動畫（長按才顯示）
+      chargeTimer = setTimeout(() => {
+        tapBtn.classList.add('charging');
+      }, LONG_MS);
     });
 
     function finalizePress(e){
       if (!pressStart) return; // 已處理或未開始
       const dur = performance.now() - pressStart; pressStart = 0;
       try { tapBtn.releasePointerCapture(e.pointerId); } catch {}
+      
+      // 清理充電狀態
+      if (chargeTimer) {
+        clearTimeout(chargeTimer);
+        chargeTimer = null;
+      }
+      tapBtn.classList.remove('charging');
 
       addEvent();
       if (dur >= LONG_MS){
         const charge = computeCharge(dur);
         haptic(30 + Math.round(50*charge));
         playBoom(charge);
+        
+        // 爆炸動畫效果
+        tapBtn.classList.add('exploding');
+        setTimeout(() => tapBtn.classList.remove('exploding'), 600);
+        
+        // 粒子爆炸效果
+        const rect = tapBtn.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        createParticleExplosion(centerX, centerY, charge);
+        
+        // 螢幕震動效果
+        screenShake(charge);
+        
       } else {
         haptic(15);
         playPing();
@@ -204,30 +236,40 @@
     }
 
     tapBtn.addEventListener('pointerup', (e) => { e.preventDefault(); finalizePress(e); });
-    tapBtn.addEventListener('pointercancel', (e) => { e.preventDefault(); pressStart = 0; try { tapBtn.releasePointerCapture(e.pointerId); } catch {} });
-    tapBtn.addEventListener('pointerleave', (e) => { if (pressStart){ // 視為取消，避免拖出按鈕誤觸
-      e.preventDefault(); pressStart = 0; try { tapBtn.releasePointerCapture(e.pointerId); } catch {} }
+    
+    tapBtn.addEventListener('pointercancel', (e) => { 
+      e.preventDefault(); 
+      pressStart = 0; 
+      if (chargeTimer) { clearTimeout(chargeTimer); chargeTimer = null; }
+      tapBtn.classList.remove('charging');
+      try { tapBtn.releasePointerCapture(e.pointerId); } catch {} 
+    });
+    
+    tapBtn.addEventListener('pointerleave', (e) => { 
+      if (pressStart){ // 視為取消，避免拖出按鈕誤觸
+        e.preventDefault(); 
+        pressStart = 0; 
+        if (chargeTimer) { clearTimeout(chargeTimer); chargeTimer = null; }
+        tapBtn.classList.remove('charging');
+        try { tapBtn.releasePointerCapture(e.pointerId); } catch {} 
+      }
     });
     tapBtn.addEventListener('contextmenu', (e) => e.preventDefault()); // 手機長按不跳選單
 
-    // 範圍切換
-    rangeBtns.forEach(btn => btn.addEventListener('click', () => { rangeBtns.forEach(b => b.setAttribute('aria-pressed','false')); btn.setAttribute('aria-pressed','true'); days = Number(btn.dataset.days || '14'); refresh(); }));
 
-    // 匯出 / 重設
-    exportBtn.addEventListener('click', () => { const rows = readEvents().sort((a,b)=>a-b).map(ts => new Date(ts)).map(d => `${d.toISOString()}`); const csv = 'timestamp_iso8601\n' + rows.join('\n') + '\n'; const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'anxiety-taps.csv'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url), 5000); });
-    resetBtn.addEventListener('click', () => { if (confirm('確定要清空所有紀錄？此動作無法復原。')){ writeEvents([]); refresh(); } });
 
     // 音效控制
-    function refreshSoundUI(){ const on = isSoundEnabled(); soundBtn.setAttribute('aria-pressed', on ? 'true':'false'); soundBtn.textContent = `音效：${on ? '開':'關'}`; volRange.value = String(getVolume()); }
+    function refreshSoundUI(){ const on = isSoundEnabled(); soundBtn.setAttribute('aria-pressed', on ? 'true':'false'); soundBtn.textContent = `音效：${on ? '開':'關'}`; }
     soundBtn.addEventListener('click', () => { const next = !isSoundEnabled(); setSoundEnabled(next); if (next){ ensureAudio(); playPing(); } refreshSoundUI(); });
-    volRange.addEventListener('input', () => { setVolume(Number(volRange.value || '70')); });
 
-    // Resize redraw (debounced)
-    let resizeTimer = null; window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => renderBarChart(chartEl, lastNDaysSeries(days)), 120); });
 
     // 初次渲染
-    refreshSoundUI();
-    refresh();
+    function initializeApp() {
+      refreshSoundUI();
+      refresh();
+    }
+    
+    initializeApp();
 
     // ====== Minimal Self Tests (console) ======
     (function runTests(){
