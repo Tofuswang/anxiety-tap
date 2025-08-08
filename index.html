@@ -35,7 +35,9 @@
       justify-content:space-between;
       min-height:0
     }
-    header{display:flex;align-items:center;justify-content:center;gap:12px;flex-direction:column;text-align:center}
+    header{display:flex;align-items:center;justify-content:center;gap:12px;flex-direction:column;text-align:center;position:relative}
+    .lang-switcher{position:absolute;top:0;right:0;background:transparent;border:1px solid var(--muted);color:var(--muted);border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;transition:all .2s ease}
+    .lang-switcher:hover{border-color:var(--fg);color:var(--fg)}
     .title{font-size:clamp(20px,3.2vw,28px);font-weight:800;letter-spacing:.2px}
     .subtitle{font-size:clamp(12px,2vw,16px);color:var(--muted);font-weight:400;margin-top:4px}
     .stats{display:flex;gap:12px;flex-wrap:wrap}
@@ -94,13 +96,14 @@
 <body>
   <div class="container">
     <header>
-      <div class="title">焦慮戳戳樂</div>
-      <div class="subtitle">真實的人類，真實的焦慮</div>
+      <button class="lang-switcher" id="langBtn">EN</button>
+      <div class="title" data-zh="焦慮戳戳樂" data-en="Anxiety Tap" data-ja="不安タップ" data-ko="불안 탭">焦慮戳戳樂</div>
+      <div class="subtitle" data-zh="真實的人類，真實的焦慮" data-en="Real Humans, Real Anxiety" data-ja="リアルな人間、リアルな不安" data-ko="진짜 인간, 진짜 불안">真實的人類，真實的焦慮</div>
     </header>
 
     <main>
       <div class="button-section">
-        <button class="big-btn" id="tapBtn" aria-label="大按鈕，點按加一；長按蓄力後放開加一並播放重音">戳！</button>
+        <button class="big-btn" id="tapBtn" data-zh="戳！" data-en="TAP!" data-ja="タップ！" data-ko="탭!" aria-label="大按鈕，點按加一；長按蓄力後放開加一並播放重音">戳！</button>
         <div class="big-counter" id="bigCounter">0</div>
       </div>
 
@@ -116,6 +119,65 @@
 
   <script>
   document.addEventListener('DOMContentLoaded', () => {
+    // ====== Language Support ======
+    const LANG_KEY = 'anxiety_taps_language';
+    const LANGUAGES = ['zh', 'en', 'ja', 'ko'];
+    const LANG_LABELS = { zh: 'EN', en: '日', ja: '한', ko: '中' };
+    let currentLang = localStorage.getItem(LANG_KEY) || 'zh';
+    
+    const langTexts = {
+      soundOn: { 
+        zh: '音效：開', 
+        en: 'Sound: ON',
+        ja: 'サウンド：ON',
+        ko: '사운드: ON'
+      },
+      soundOff: { 
+        zh: '音效：關', 
+        en: 'Sound: OFF',
+        ja: 'サウンド：OFF',
+        ko: '사운드: OFF'
+      },
+      title: { 
+        zh: '焦慮戳戳（Web 版）', 
+        en: 'Anxiety Tap (Web Version)',
+        ja: '不安タップ（Web版）',
+        ko: '불안 탭 (웹 버전)'
+      },
+      description: { 
+        zh: '離線本機儲存、超大紅色按鈕、今日/本週/總計統計，含 CSV 匯出與蓄力音效。單檔可直接開啟。', 
+        en: 'Offline local storage, giant red button, tap counter with sound effects. Single file, ready to use.',
+        ja: 'オフラインローカル保存、巨大な赤いボタン、音響効果付きタップカウンター。単一ファイルですぐに使用可能。',
+        ko: '오프라인 로컬 저장, 거대한 빨간 버튼, 음향 효과가 있는 탭 카운터. 단일 파일로 즉시 사용 가능.'
+      }
+    };
+    
+    function switchLanguage(lang) {
+      currentLang = lang;
+      localStorage.setItem(LANG_KEY, lang);
+      
+      // 設定html lang屬性
+      const langMap = { zh: 'zh-Hant', en: 'en', ja: 'ja', ko: 'ko' };
+      document.documentElement.lang = langMap[lang];
+      
+      // 更新title和meta description
+      document.title = langTexts.title[lang];
+      const metaDesc = document.querySelector('meta[name="description"]');
+      if (metaDesc) metaDesc.content = langTexts.description[lang];
+      
+      // 更新所有有data屬性的元素
+      document.querySelectorAll(`[data-${lang}]`).forEach(el => {
+        el.textContent = el.getAttribute(`data-${lang}`);
+      });
+      
+      // 更新語言切換按鈕顯示下一個語言
+      const langBtn = document.getElementById('langBtn');
+      langBtn.textContent = LANG_LABELS[lang];
+      
+      // 更新音效按鈕
+      refreshSoundUI();
+    }
+
     // ====== Utilities ======
 
     // Haptics (best-effort)
@@ -304,13 +366,24 @@
 
 
     // 音效控制
-    function refreshSoundUI(){ const on = isSoundEnabled(); soundBtn.setAttribute('aria-pressed', on ? 'true':'false'); soundBtn.textContent = `音效：${on ? '開':'關'}`; }
+    function refreshSoundUI(){ 
+      const on = isSoundEnabled(); 
+      soundBtn.setAttribute('aria-pressed', on ? 'true':'false'); 
+      soundBtn.textContent = on ? langTexts.soundOn[currentLang] : langTexts.soundOff[currentLang];
+    }
     soundBtn.addEventListener('click', () => { const next = !isSoundEnabled(); setSoundEnabled(next); if (next){ ensureAudio(); playPing(); } refreshSoundUI(); });
 
+    // 語言切換
+    const langBtn = document.getElementById('langBtn');
+    langBtn.addEventListener('click', () => {
+      const currentIndex = LANGUAGES.indexOf(currentLang);
+      const nextIndex = (currentIndex + 1) % LANGUAGES.length;
+      switchLanguage(LANGUAGES[nextIndex]);
+    });
 
     // 初次渲染
     function initializeApp() {
-      refreshSoundUI();
+      switchLanguage(currentLang); // 初始化語言
       refresh();
     }
     
